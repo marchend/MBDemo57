@@ -6,7 +6,7 @@ final class AcmeBankTests: XCTestCase {
     /// module. Real behaviour tests belong in feature stories.
     /// Do NOT assert on view rendering or walk the SwiftUI view hierarchy —
     /// SwiftUI Text does not render as UILabel and such assertions always fail.
-    func test_contentView_initializes() {
-        _ = ContentView()
+    func test_loginViewModel_initializes() {
+        _ = LoginViewModel()
     }
 }

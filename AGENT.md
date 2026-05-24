@@ -3,8 +3,8 @@
 ## Project Overview
 AcmeBank is an iOS banking app (iOS 17+, Swift 5.10) built with SwiftUI and an
 MVVM + Coordinator architecture. It provides account overviews, transaction history,
-fund transfers, and bill payments, authenticated via Okta OIDC. This repo currently
-holds the Hello-World bootstrap shell; all features are deferred to future PRs.
+fund transfers, and bill payments, authenticated via Okta OIDC. The login screen
+(LoginView + LoginViewModel) has been implemented and is the app's entry point.
 
 ## Tech Stack
 | Concern | Choice |
@@ -19,7 +19,7 @@ holds the Hello-World bootstrap shell; all features are deferred to future PRs.
 | Notifications | `NotificationCenter` with typed wrappers |
 | Project generation | XcodeGen (`project.yml`) |
 | Unit tests | XCTest (`AcmeBankTests` target) |
-| UI tests | XCUITest (`AcmeBankUITests` target — deferred) |
+| UI tests | XCUITest (`AcmeBankUITests` target) |
 | Bundle ID | `com.acmebank.mobile` |
 
 ## How to Run Locally
@@ -37,23 +37,32 @@ Build & run: select scheme `AcmeBank` → iPhone simulator → ▶
 ## Key Directory Structure
 ```
 AcmeBank/
-├── App/               ← @main entry + ContentView (implemented)
+├── App/               ← @main entry (AcmeBankApp.swift → LoginView)
 ├── Core/              ← Auth, Networking, Notifications, Extensions (deferred)
 ├── Domain/            ← Models + Repository protocols (deferred)
 ├── Data/              ← Remote + Mock repository implementations (deferred)
-├── Features/          ← Login, Home, Accounts, Transfer, Cards screens (deferred)
-└── DesignSystem/      ← Colors, Typography, Assets (deferred)
-AcmeBankTests/         ← XCTest unit tests (smoke test implemented; feature tests deferred)
-AcmeBankUITests/       ← XCUITest end-to-end flows (deferred)
+├── Features/
+│   └── Login/         ← LoginView.swift, LoginViewModel.swift, LoginView+Previews.swift
+└── DesignSystem/      ← Colors+AcmeBank.swift, Fonts+AcmeBank.swift
+AcmeBankTests/
+└── Features/Login/    ← LoginViewModelTests.swift
+AcmeBankUITests/
+└── Features/Login/    ← LoginViewUITests.swift
 project.yml            ← XcodeGen spec (source of truth — never edit .xcodeproj directly)
 setup.sh               ← One-shot post-clone materialisation script
 ```
 
-## Planned Architecture
+## Implemented Features
+### Login Screen (PR 1 — MD057-3)
+- `AcmeBankApp.swift` — launches `LoginView(viewModel: LoginViewModel())` directly
+- `LoginViewModel` — `@Published` email/password/isLoading, injectable `onSignIn` closure
+- `LoginView` — branding header, email TextField, password SecureField, Sign-in Button
+- `Colors+AcmeBank.swift` — brand colour tokens (`acmeNavy`, `acmeTeal`, semantic tokens)
+- `Fonts+AcmeBank.swift` — typography tokens (`acmeDisplayTitle`, `acmePrimaryButton`, etc.)
+- `LoginViewModelTests` — 8 unit tests covering state, guard logic, closure invocation
+- `LoginViewUITests` — XCUITest smoke tests for element presence and button interaction
 
-### Entry Point (implemented in this PR)
-- `AcmeBankApp.swift` — `@main struct AcmeBankApp: App`, `WindowGroup { ContentView() }`
-- `ContentView.swift` — placeholder "AcmeBank" label
+## Planned Architecture
 
 ### MVVM + Coordinator (deferred — future PR)
 - **View**: SwiftUI `View` struct, zero business logic, observes ViewModel via `@StateObject`
@@ -89,18 +98,6 @@ hardcoded fixtures. Every screen story uses mocks first; real API wired in follo
 `AppNotification` typed `Notification.Name` constants, `NotificationPublisher` helper,
 `NotificationKey` typed userInfo keys.
 
-### Design System (deferred — future PR)
-`Colors.swift` (`Color` extensions: `acmeNavy`, `acmeBackground`, etc.),
-`Typography.swift` (`Font` extensions), `Assets.xcassets`.
-
-### Testing (deferred — future PR)
-- XCTest for all ViewModels, repositories, extensions (≥80% line coverage on Core + Features)
-- XCUITest for critical flows: login, transfer, sign-out (separate `AcmeBankUITests` target)
-- SwiftLint (`.swiftlint.yml`) on every PR
-
-### CI (deferred — future PR)
-`ios-build.yml`: `xcodebuild test`, SwiftLint, `-warnings-as-errors`, xcconfig secret injection.
-
 ## Deferred Work
 - Okta OIDC auth (`AuthService`, `KeychainStore`, `UserSession`, `Okta.plist.example`)
 - AppCoordinator + full coordinator hierarchy
@@ -109,9 +106,7 @@ hardcoded fixtures. Every screen story uses mocks first; real API wired in follo
 - Core/Extensions (`Decimal+Currency`, `Date+Greeting`, `String+Initials`)
 - Domain models + repository protocols
 - Data/Remote + Data/Mock repository implementations
-- All feature screens (Login, Home, Accounts, Transfer, Cards)
-- DesignSystem (Colors, Typography, Assets)
-- `AcmeBankUITests` XCUITest target (login, transfer, sign-out flows)
+- Remaining feature screens (Home, Accounts, Transfer, Cards)
 - SwiftLint configuration (`.swiftlint.yml`)
 - CI workflow + xcconfig injection
 - `Localizable.strings`

@@ -21,9 +21,15 @@ targets:
     sources: [AcmeBankTests]
     dependencies:
       - target: AcmeBank
+  AcmeBankUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [AcmeBankUITests]
+    dependencies:
+      - target: AcmeBank
 schemes:
   AcmeBank:
     build:
       targets: { AcmeBank: all }
     test:
-      targets: [AcmeBankTests]
+      targets: [AcmeBankTests, AcmeBankUITests]

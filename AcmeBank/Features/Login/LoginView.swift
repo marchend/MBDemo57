@@ -2,15 +2,17 @@ import SwiftUI
 
 /// The login screen.
 ///
-/// Presents the AcmeBank brand header, an email text field, a masked password
-/// field, a primary "Sign in" button, and a "Forgot password?" link. All
-/// interactive elements carry accessibility identifiers so `XCUITest` can
-/// locate them reliably without coupling to display copy.
+/// Presents the AcmeBank brand header, an email text field, a password field
+/// with a reveal toggle, a "Keep me signed in" toggle, a primary "Sign in"
+/// button (disabled until both fields are non-empty), a "Forgot password?"
+/// link, and a "Need help?" link. All interactive elements carry accessibility
+/// identifiers so `XCUITest` can locate them reliably without coupling to
+/// display copy.
 struct LoginView: View {
 
     // MARK: - Dependencies
 
-    @StateObject var viewModel: LoginViewModel
+    @ObservedObject var viewModel: LoginViewModel
 
     // MARK: - Body
 
@@ -76,7 +78,7 @@ struct LoginView: View {
                     .font(.acmeCaption)
                     .foregroundColor(.acmeSecondaryLabel)
 
-                TextField("you@example.com", text: $viewModel.email)
+                TextField("name@acmebank.com", text: $viewModel.email)
                     .font(.acmeField)
                     .keyboardType(.emailAddress)
                     .textContentType(.emailAddress)
@@ -91,23 +93,52 @@ struct LoginView: View {
                     .accessibilityIdentifier("login_email_field")
             }
 
-            // Password field
+            // Password field with reveal toggle
             VStack(alignment: .leading, spacing: 6) {
                 Text("Password")
                     .font(.acmeCaption)
                     .foregroundColor(.acmeSecondaryLabel)
 
-                SecureField("Enter your password", text: $viewModel.password)
+                HStack {
+                    Group {
+                        if viewModel.isPasswordVisible {
+                            TextField("Enter your password", text: $viewModel.password)
+                                .textContentType(.password)
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                        } else {
+                            SecureField("Enter your password", text: $viewModel.password)
+                                .textContentType(.password)
+                        }
+                    }
                     .font(.acmeField)
-                    .textContentType(.password)
-                    .padding(12)
-                    .background(Color.acmeBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.acmeSeparator, lineWidth: 1)
-                    )
-                    .accessibilityIdentifier("login_password_field")
+
+                    Button {
+                        viewModel.isPasswordVisible.toggle()
+                    } label: {
+                        Image(systemName: viewModel.isPasswordVisible ? "eye.slash" : "eye")
+                            .foregroundColor(.acmeSecondaryLabel)
+                    }
+                    .accessibilityLabel(viewModel.isPasswordVisible ? "Hide password" : "Show password")
+                    .accessibilityIdentifier("login_password_reveal_button")
+                }
+                .padding(12)
+                .background(Color.acmeBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.acmeSeparator, lineWidth: 1)
+                )
+                .accessibilityIdentifier("login_password_field")
             }
+
+            // Keep me signed in toggle
+            Toggle(isOn: $viewModel.keepMeSignedIn) {
+                Text("Keep me signed in")
+                    .font(.acmeBody)
+                    .foregroundColor(.acmeSecondaryLabel)
+            }
+            .tint(.acmePrimaryButtonFill)
+            .accessibilityIdentifier("login_keep_signed_in_toggle")
 
             // Forgot password link
             HStack {
@@ -120,7 +151,8 @@ struct LoginView: View {
                 .accessibilityIdentifier("login_forgot_password_button")
             }
 
-            // Sign in button
+            // Sign in button — disabled until both fields are non-empty or loading
+            let isDisabled = !viewModel.canSignIn || viewModel.isLoading
             Button {
                 viewModel.signIn()
             } label: {
@@ -135,15 +167,27 @@ struct LoginView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(
-                    viewModel.isLoading
-                        ? Color.acmePrimaryButtonFill.opacity(0.6)
+                    isDisabled
+                        ? Color.acmePrimaryButtonFill.opacity(0.4)
                         : Color.acmePrimaryButtonFill
                 )
                 .foregroundColor(.acmePrimaryButtonLabel)
                 .cornerRadius(10)
             }
-            .disabled(viewModel.isLoading)
+            .disabled(isDisabled)
             .accessibilityIdentifier("login_sign_in_button")
+
+            // Need help? link
+            HStack {
+                Spacer()
+                Button("Need help?") {
+                    viewModel.needHelp()
+                }
+                .font(.acmeLink)
+                .foregroundColor(.acmePrimaryButtonFill)
+                .accessibilityIdentifier("login_need_help_button")
+                Spacer()
+            }
         }
         .padding(24)
     }

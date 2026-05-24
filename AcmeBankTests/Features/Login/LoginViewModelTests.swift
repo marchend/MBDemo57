@@ -20,6 +20,49 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isLoading, "isLoading should be false on init")
     }
 
+    func test_initialState_isPasswordVisibleIsFalse() {
+        let sut = LoginViewModel()
+        XCTAssertFalse(sut.isPasswordVisible, "isPasswordVisible should be false on init")
+    }
+
+    func test_initialState_keepMeSignedInIsFalse() {
+        let sut = LoginViewModel()
+        XCTAssertFalse(sut.keepMeSignedIn, "keepMeSignedIn should be false on init")
+    }
+
+    // MARK: - canSignIn (derived state)
+
+    func test_canSignIn_isFalse_whenBothFieldsEmpty() {
+        let sut = LoginViewModel()
+        XCTAssertFalse(sut.canSignIn)
+    }
+
+    func test_canSignIn_isFalse_whenEmailEmpty() {
+        let sut = LoginViewModel()
+        sut.password = "secret123"
+        XCTAssertFalse(sut.canSignIn)
+    }
+
+    func test_canSignIn_isFalse_whenPasswordEmpty() {
+        let sut = LoginViewModel()
+        sut.email = "user@acmebank.com"
+        XCTAssertFalse(sut.canSignIn)
+    }
+
+    func test_canSignIn_isFalse_whenEmailIsWhitespaceOnly() {
+        let sut = LoginViewModel()
+        sut.email = "   "
+        sut.password = "secret123"
+        XCTAssertFalse(sut.canSignIn)
+    }
+
+    func test_canSignIn_isTrue_whenBothFieldsNonEmpty() {
+        let sut = LoginViewModel()
+        sut.email = "user@acmebank.com"
+        sut.password = "secret123"
+        XCTAssertTrue(sut.canSignIn)
+    }
+
     // MARK: - signIn() — closure invocation
 
     func test_signIn_withValidCredentials_callsOnSignInClosure() {
@@ -97,6 +140,25 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isLoading, "isLoading should remain false when guard fails")
     }
 
+    // MARK: - resetLoading()
+
+    func test_resetLoading_setsIsLoadingToFalse() {
+        let sut = LoginViewModel()
+        sut.email = "user@acmebank.com"
+        sut.password = "secret123"
+        sut.signIn() // sets isLoading = true
+
+        sut.resetLoading()
+
+        XCTAssertFalse(sut.isLoading, "resetLoading() should set isLoading back to false")
+    }
+
+    func test_resetLoading_isIdempotent_whenAlreadyFalse() {
+        let sut = LoginViewModel()
+        sut.resetLoading()
+        XCTAssertFalse(sut.isLoading, "resetLoading() should be safe to call when isLoading is already false")
+    }
+
     // MARK: - forgotPassword()
 
     func test_forgotPassword_callsOnForgotPasswordClosure() {
@@ -108,5 +170,27 @@ final class LoginViewModelTests: XCTestCase {
         sut.forgotPassword()
 
         XCTAssertTrue(closureCalled, "onForgotPassword closure should be called on forgotPassword()")
+    }
+
+    // MARK: - needHelp()
+
+    func test_needHelp_callsOnNeedHelpClosure() {
+        let sut = LoginViewModel()
+
+        var closureCalled = false
+        sut.onNeedHelp = { closureCalled = true }
+
+        sut.needHelp()
+
+        XCTAssertTrue(closureCalled, "onNeedHelp closure should be called on needHelp()")
+    }
+
+    // MARK: - isPasswordVisible toggle
+
+    func test_isPasswordVisible_togglesFromFalseToTrue() {
+        let sut = LoginViewModel()
+        XCTAssertFalse(sut.isPasswordVisible)
+        sut.isPasswordVisible = true
+        XCTAssertTrue(sut.isPasswordVisible)
     }
 }
